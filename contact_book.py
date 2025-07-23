@@ -1,64 +1,88 @@
 import json
 import os
-import re
-import csv
 
+# File to store contacts
 DATA_FILE = "contacts.json"
 
-# Colors for terminal output
-class Colors:
-    HEADER = "\033[95m"
-    OKBLUE = "\033[94m"
-    OKGREEN = "\033[92m"
-    WARNING = "\033[93m"
-    FAIL = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
+# Load existing contacts or create a new file
+def load_contacts():
+    if not os.path.exists(DATA_FILE):
+        return []
+    with open(DATA_FILE, "r") as f:
+        return json.load(f)
 
+def save_contacts(contacts):
+    with open(DATA_FILE, "w") as f:
+        json.dump(contacts, f, indent=4)
 
-# ---------------- Contact Class ---------------- #
-class Contact:
-    def __init__(self, name, phone, email):
-        self.name = name
-        self.phone = phone
-        self.email = email
+# Display all contacts
+def view_contacts(contacts):
+    if not contacts:
+        print("\nNo contacts found!\n")
+        return
+    print("\n===== CONTACT LIST =====")
+    for idx, c in enumerate(contacts, start=1):
+        print(f"{idx}. {c['name']} | {c['phone']} | {c['email']}")
+    print("=========================\n")
 
-    def to_dict(self):
-        return {"name": self.name, "phone": self.phone, "email": self.email}
+# Add a new contact
+def add_contact(contacts):
+    name = input("Enter name: ").strip()
+    phone = input("Enter phone: ").strip()
+    email = input("Enter email: ").strip()
 
+    contacts.append({"name": name, "phone": phone, "email": email})
+    save_contacts(contacts)
+    print("\nContact added successfully!\n")
 
-# ---------------- ContactBook Class ---------------- #
-class ContactBook:
-    def __init__(self):
-        self.contacts = self.load_contacts()
-
-    # Load and Save
-    def load_contacts(self):
-        if not os.path.exists(DATA_FILE):
-            return []
-        with open(DATA_FILE, "r") as f:
-            return json.load(f)
-
-    def save_contacts(self):
-        with open(DATA_FILE, "w") as f:
-            json.dump(self.contacts, f, indent=4)
-
-    # View all contacts
-    def view_contacts(self):
-        if not self.contacts:
-            print(f"{Colors.WARNING}No contacts found!{Colors.ENDC}")
-            return
-        print(f"\n{Colors.OKBLUE}{Colors.BOLD}===== Contact List ====={Colors.ENDC}")
-        for idx, c in enumerate(self.contacts, start=1):
+# Search contacts by name or phone
+def search_contact(contacts):
+    keyword = input("Enter name or phone to search: ").lower()
+    results = [c for c in contacts if keyword in c["name"].lower() or keyword in c["phone"]]
+    if results:
+        print("\nSearch Results:")
+        for idx, c in enumerate(results, start=1):
             print(f"{idx}. {c['name']} | {c['phone']} | {c['email']}")
-        print(f"{Colors.OKBLUE}========================{Colors.ENDC}\n")
+    else:
+        print("\nNo matching contacts found!\n")
 
-    # Add contact
-    def add_contact(self):
-        name = input("Enter Name: ").strip()
-        phone = input("Enter Phone (10 digits): ").strip()
-        email = input("Enter Email: ").strip()
+# Delete a contact
+def delete_contact(contacts):
+    view_contacts(contacts)
+    try:
+        idx = int(input("Enter contact number to delete: ")) - 1
+        deleted = contacts.pop(idx)
+        save_contacts(contacts)
+        print(f"\nDeleted contact: {deleted['name']}\n")
+    except (ValueError, IndexError):
+        print("\nInvalid contact number!\n")
 
-        # Validation
-        if not re.fullmatch(r"\d{10}", phone):
-            print(f"{Colors.FAIL}Invalid phone number! Must be 10 digits.{Colors.ENDC}")
+# Main menu
+def main():
+    contacts = load_contacts()
+    while True:
+        print("""
+========= CONTACT BOOK =========
+1. View Contacts
+2. Add Contact
+3. Search Contact
+4. Delete Contact
+5. Exit
+""")
+        choice = input("Enter your choice: ").strip()
+        if choice == "1":
+            view_contacts(contacts)
+        elif choice == "2":
+            add_contact(contacts)
+        elif choice == "3":
+            search_contact(contacts)
+        elif choice == "4":
+            delete_contact(contacts)
+        elif choice == "5":
+            print("\nExiting... Goodbye!")
+            break
+        else:
+            print("\nInvalid choice! Try again.\n")
+
+if __name__ == "__main__":
+    main()
